@@ -1,51 +1,7 @@
-# import sys
-# from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QTabWidget, QApplication, QHBoxLayout, QVBoxLayout, QLabel, QGridLayout
-# from PyQt5.QtGui import QIcon
-# from PLC_CommandClass import *
-
-# __program__ = 'PLC_Monitor'
-
-# class MainWindow(QMainWindow):
-    
-#     def __init__(self):
-#         super().__init__()
-#         self.title = __program__
-#         self.left = 1250
-#         self.top = 100
-#         self.width = 768
-#         self.height = 1024
-#         self.setWindowTitle(self.title)
-#         self.setGeometry(self.left, self.top, self.width, self.height)
-#         self.table_widget = CommandLogTable(self)
-#         self.setCentralWidget(self.table_widget)
-
-#         self.show()
-    
-# class CommandLogTable(QWidget):
-
-#     def __init__(self, parent):
-#         super(QWidget, self).__init__(parent)
-#         self.layout = QVBoxLayout(self)
-
-        
-#         # initialize tab screen
-#         self.tabs = QTabWidget()
-#         # self.tab1 = QWidget()
-#         # self.tab2 = QWidget()
-#         self.tab = []
-#         self.tabs.resize(1200, 800)
-
-
-# if __name__ == '__main__':
-#     app = QApplication(sys.argv)
-
-#     ui = MainWindow()
-#     sys.exit(app.exec_())
-
 import sys
-from PyQt5.QtWidgets import QMainWindow, QWidget, QTableWidget, QTableWidgetItem, QTabWidget, QApplication, QVBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QWidget, QTableWidget, QTableWidgetItem, QApplication, QVBoxLayout, QLabel, QTextEdit, QComboBox
 from PyQt5.QtGui import QIcon
-# from PLC_CommandClass import *  # 必要に応じてインポート
+from PyQt5 import QtWidgets  # 追加
 
 __program__ = 'PLC_Monitor'
 
@@ -61,54 +17,89 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
         
-        # CommandLogTable をメインウィジェットとして設定
-        self.table_widget = CommandLogTable(self)
-        self.setCentralWidget(self.table_widget)
+        # メインウィジェット
+        self.main_widget = QWidget(self)
+        
+        # 縦並びレイアウト
+        self.layout = QVBoxLayout(self.main_widget)
+        
+        # 2つのウィジェットを作成
+        self.table_widget1 = CommandLogTable(self, "Command Log")  # Command Logウィジェット（スクロールできるテキストボックス）
+        self.table_widget2 = CommandLogTable(self, "Device Status", "Table")  # Device Statusウィジェット（テーブルあり）
+        
+        # ウィジェットをレイアウトに追加
+        self.layout.addWidget(self.table_widget1)
+        self.layout.addWidget(self.table_widget2)
+        
+        # 両方のウィジェットに均等なサイズを割り当て
+        self.layout.setStretch(0, 1)  # table_widget1のサイズの伸縮比
+        self.layout.setStretch(1, 1)  # table_widget2のサイズの伸縮比
+        
+        # メインウィジェットを設定
+        self.setCentralWidget(self.main_widget)
 
         self.show()
     
 class CommandLogTable(QWidget):
 
-    def __init__(self, parent):
-        super(QWidget, self).__init__(parent)
+    def __init__(self, parent, title, table_name=None):
+        super().__init__(parent)
         self.layout = QVBoxLayout(self)
         
-        # タブウィジェットを初期化
-        self.tabs = QTabWidget()
+        # タイトルラベルを追加
+        self.title_label = QLabel(title, self)
+        self.title_label.setStyleSheet("font-weight: bold; font-size: 16px;")
+        self.layout.addWidget(self.title_label)
         
-        # 各タブの作成
-        self.tab1 = QWidget()
-        self.tab2 = QWidget()
+        if table_name:  # table_nameが指定されている場合のみテーブルを作成
+            # QTableWidgetを作成
+            self.table = QTableWidget()
+            self.table.setRowCount(5)       # 行数を設定
+            self.table.setColumnCount(8)    # 列数を設定
+            self.table.setHorizontalHeaderLabels(["Type", "Num", "Elements", "Status", "Query", "Run", "Enable", "String"])
+            
+            # 列幅の初期設定
+            for col in range(7):
+                self.table.setColumnWidth(col, 90)  # すべての列の幅を60pxに設定
+            self.table.setColumnWidth(7, 300)
+
+            # 行高さの初期設定
+            for row in range(5):
+                self.table.setRowHeight(row, 40)  # すべての行の高さを40pxに設定
+            
+            # テーブルにデータを追加
+            for row in range(5):
+                for col in range(8):
+                    item = QTableWidgetItem(f"-----")
+                    self.table.setItem(row, col, item)
+            
+            # 1列目（Type）にダウンリストを追加
+            for row in range(5):
+                combo1 = QComboBox(self.table)
+                combo1.addItems(["", "Option 1", "Option 2", "Option 3"])  # 選択肢
+                self.table.setCellWidget(row, 0, combo1)  # 1列目にダウンリストを配置
+
+            # 5列目（Query）にダウンリストを追加
+            for row in range(5):
+                combo2 = QComboBox(self.table)
+                combo2.addItems(["", "Query 1", "Query 2", "Query 3"])  # 選択肢
+                self.table.setCellWidget(row, 4, combo2)  # 5列目にダウンリストを配置
+            
+            # 各列のリサイズモードを設定（列幅を調整できるようにする）
+            for col in range(8):
+                self.table.horizontalHeader().setSectionResizeMode(col, QtWidgets.QHeaderView.Interactive)  # 列幅調整可能に設定
+            
+            # テーブルをレイアウトに追加
+            self.layout.addWidget(self.table)
         
-        # タブにテーブルを追加
-        self.createTable(self.tab1, "Table 1")
-        self.createTable(self.tab2, "Table 2")
-        
-        # タブを追加
-        self.tabs.addTab(self.tab1, "Tab 1")
-        self.tabs.addTab(self.tab2, "Tab 2")
-        
-        # タブウィジェットをレイアウトに追加
-        self.layout.addWidget(self.tabs)
+        # コマンドログ用テキストボックス（Command Logにのみ追加）
+        if not table_name:  # table_nameがない場合（Command Log用）
+            self.text_edit = QTextEdit(self)
+            self.text_edit.setPlaceholderText("Enter command log here...")
+            self.text_edit.setReadOnly(True)  # 読み取り専用にする
+            self.layout.addWidget(self.text_edit)
+
         self.setLayout(self.layout)
-        
-    def createTable(self, tab, table_name):
-        # QTableWidgetを作成
-        table = QTableWidget()
-        table.setRowCount(5)       # 行数を設定
-        table.setColumnCount(3)    # 列数を設定
-        table.setHorizontalHeaderLabels(["Column 1", "Column 2", "Column 3"])
-        
-        # テーブルにデータを追加
-        for row in range(5):
-            for col in range(3):
-                item = QTableWidgetItem(f"{table_name} - Item {row+1},{col+1}")
-                table.setItem(row, col, item)
-        
-        # テーブルをタブのレイアウトに追加
-        tab.layout = QVBoxLayout()
-        tab.layout.addWidget(table)
-        tab.setLayout(tab.layout)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
