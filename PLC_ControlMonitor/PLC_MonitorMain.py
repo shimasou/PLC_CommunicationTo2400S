@@ -13,10 +13,10 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.title = __program__
-        self.left = 1250
+        self.left = 1100
         self.top = 100
-        self.width = 768
-        self.height = 1024
+        self.width = 1024
+        self.height = 1200
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
 
@@ -80,20 +80,20 @@ class CommandLogTable(QWidget):
             # QTableWidgetを作成
             self.table = QTableWidget()
             self.table.setRowCount(5)       # 行数を設定
-            self.table.setColumnCount(8)    # 列数を設定
-            self.table.setHorizontalHeaderLabels(["Type", "Num", "Elements", "Status", "Query", "Run", "Enable", "String"])
+            self.table.setColumnCount(9)    # 列数を設定
+            self.table.setHorizontalHeaderLabels(["Type", "Num", "Elements", "Status", "Query", "Run", "Enable", "Format", "String"])
             
             # 列幅の初期設定
-            for col in range(7):
+            for col in range(8):
                 self.table.setColumnWidth(col, 90)  # すべての列の幅を90pxに設定
-            self.table.setColumnWidth(7, 300)
+            self.table.setColumnWidth(8, 300)
 
             # 行高さの初期設定
             for row in range(5):
                 self.table.setRowHeight(row, 50)  # すべての行の高さを50pxに設定
             
-            # CSVからTypeとQueryの列を取得してダウンリストに設定
-            self.type_list, self.query_list = self.load_csv_data("Device_Status_Table.csv")
+            # CSVからType1、Query、Formatの列を取得してダウンリストに設定
+            self.type_list, self.query_list, self.format_list = self.load_csv_data("Device_Status_Table.csv")
             
             # 1列目（Type）にダウンリストを追加
             for row in range(5):
@@ -106,6 +106,12 @@ class CommandLogTable(QWidget):
                 combo2 = QComboBox(self.table)
                 combo2.addItems(self.query_list)  # CSVから読み込んだQueryのリストを使用
                 self.table.setCellWidget(row, 4, combo2)  # 5列目にダウンリストを配置
+
+            # 8列目（Format）にダウンリストを追加
+            for row in range(5):
+                combo3 = QComboBox(self.table)
+                combo3.addItems(self.format_list)  # CSVから読み込んだQueryのリストを使用
+                self.table.setCellWidget(row, 7, combo3)  # 8列目にダウンリストを配置
             
             # 6列目（Run）に押しボタンをセルいっぱいに追加
             for row in range(5):
@@ -124,17 +130,17 @@ class CommandLogTable(QWidget):
                 checkbox_widget.setLayout(checkbox_layout)
                 self.table.setCellWidget(row, 6, checkbox_widget)  # 7列目にチェックボックスを配置
             
-            # Num列（1列目）とElements列（2列目）にQLineEditを追加して数字のみを受け付けるようにする
+            # Num列（2列目）とElements列（3列目）にQLineEditを追加して数字のみを受け付けるようにする
             for row in range(5):
-                # Num列（1列目）
+                # Num列（2列目）
                 num_line_edit = QLineEdit(self.table)
                 num_line_edit.setValidator(QtGui.QIntValidator())  # 数値のみを受け付ける
                 self.table.setCellWidget(row, 1, num_line_edit)
                 
-                # Elements列（2列目）
-                # elements_line_edit = QLineEdit(self.table)
-                # elements_line_edit.setValidator(QtGui.QIntValidator())  # 数値のみを受け付ける
-                # self.table.setCellWidget(row, 2, elements_line_edit)
+                # Elements列（3列目）
+                elements_line_edit = QLineEdit(self.table)
+                elements_line_edit.setValidator(QtGui.QIntValidator())  # 数値のみを受け付ける
+                self.table.setCellWidget(row, 2, elements_line_edit)
 
             # StatusとString列にQTableWidgetItemを追加
             for row in range(5):
@@ -175,6 +181,7 @@ class CommandLogTable(QWidget):
         # CSVファイルを読み込んで、TypeとQuery列を取得
         type_list = []
         query_list = []
+        format_list = []
         with open(filename, mode='r') as file:
             reader = csv.DictReader(file)
             for row in reader:
@@ -183,7 +190,9 @@ class CommandLogTable(QWidget):
                     type_list.append(row['Type'])
                 if row['Query'] not in query_list:
                     query_list.append(row['Query'])
-        return type_list, query_list
+                if row['Format'] not in format_list:
+                    format_list.append(row['Format'])
+        return type_list, query_list, format_list
     
     def add_row(self):
         # 新しい行をテーブルに追加
@@ -195,9 +204,9 @@ class CommandLogTable(QWidget):
         num_line_edit.setValidator(QtGui.QIntValidator())
         self.table.setCellWidget(row_count, 1, num_line_edit)
 
-        # elements_line_edit = QLineEdit(self.table)
-        # elements_line_edit.setValidator(QtGui.QIntValidator())
-        # self.table.setCellWidget(row_count, 2, elements_line_edit)
+        elements_line_edit = QLineEdit(self.table)
+        elements_line_edit.setValidator(QtGui.QIntValidator())
+        self.table.setCellWidget(row_count, 2, elements_line_edit)
 
         combo1 = QComboBox(self.table)
         combo1.addItems(self.type_list)
@@ -206,6 +215,10 @@ class CommandLogTable(QWidget):
         combo2 = QComboBox(self.table)
         combo2.addItems(self.query_list)
         self.table.setCellWidget(row_count, 4, combo2)
+
+        combo3 = QComboBox(self.table)
+        combo3.addItems(self.format_list)
+        self.table.setCellWidget(row_count, 7, combo3)
 
         run_button = QPushButton("Run", self.table)
         run_button.clicked.connect(lambda _, r=row_count: self.run_button_clicked(r))
@@ -223,7 +236,7 @@ class CommandLogTable(QWidget):
         self.table.setItem(row_count, 3, status_item)
 
         string_item = QTableWidgetItem("-----")
-        self.table.setItem(row_count, 7, string_item)
+        self.table.setItem(row_count, 8, string_item)
 
         # 新しい行の高さを50に設定
         self.table.setRowHeight(row_count, 50)
@@ -235,11 +248,38 @@ class CommandLogTable(QWidget):
     def run_button_clicked(self, row):
         Device_type = self.table.cellWidget(row, 0)
         Device_num = self.table.cellWidget(row, 1)
+        Device_elements = self.table.cellWidget(row, 2)
         Device_query = self.table.cellWidget(row, 4)
+        Device_format = self.table.cellWidget(row, 7)
+        Device_string = self.table.item(row, 8)
 
         Type_value = Device_type.currentText() if Device_type else "Not Selected"
         Num_value = Device_num.text() if Device_num else "Not Provided"
+        Elements_value = Device_elements.text() if Device_elements else "Not Provided"
         Query_value = Device_query.currentText() if Device_query else "Not Selected"
+        Format_value = (
+            '' if Device_format.currentText() == ''
+            else '.S' if Device_format.currentText() == 'int16'
+            else '.U' if Device_format.currentText() == 'uint16'
+            else '.D' if Device_format.currentText() == 'double'
+            else '.L' if Device_format.currentText() == 'long'
+            else '.H' if Device_format.currentText() == 'hex16' or Device_format.currentText() == 'ascii'
+            else Device_format.currentText() if Device_format
+            else "Other Selected"
+        )
+        String_value = Device_string.text() if Device_string else "Not Written"
+
+        if Device_format.currentText() == 'ascii':
+            String_value = String_value if len(String_value) % 2 == 0 else String_value + '\x00'
+            Elements_value = str(len(String_value) // 2)
+            String_value = ''.join([format(ord(char), '02X') for char in String_value])
+            String_value = ' '.join([String_value[i:i+4] for i in range(0, len(String_value), 4)])
+
+        PLCdata = ("Running command: Device=" + Type_value + Num_value + Format_value +
+                   ", Elements=" + Elements_value +
+                   ", Query=" + Query_value +
+                   ", String=" + String_value)
+        self.main_window.append_to_log(PLCdata)
 
         if Query_value == 'Set':
             PLCdata = kv.set(Type_value + Num_value)
@@ -247,11 +287,29 @@ class CommandLogTable(QWidget):
         elif Query_value == 'Reset':
             PLCdata = kv.reset(Type_value + Num_value)
         
+        elif Query_value == 'Read':
+            PLCdata = kv.read(Type_value + Num_value + Format_value)
+        
+        elif Query_value == 'ReadS':
+            PLCdata = kv.reads(Type_value + Num_value + Format_value, Elements_value)
+        
+            if Device_format.currentText() == 'ascii':
+                PLCdata = PLCdata.decode('ascii')
+                PLCdata = PLCdata.replace(" ", "").replace("\r\n", "0D0A")
+                PLCdata = ''.join([chr(int(PLCdata[i:i+2], 16)) for i in range(0, len(PLCdata), 2)])
+                PLCdata = PLCdata.replace("\r\n", "\\r\\n")
+        
+        elif Query_value == 'Write':
+            PLCdata = kv.write(Type_value + Num_value + Format_value, String_value)
+        
+        elif Query_value == 'WriteS':
+            PLCdata = kv.writes(Type_value + Num_value + Format_value, Elements_value, String_value)
+        
+        else:
+            PLCdata = "Not Selected Query"
+        
         print(PLCdata)
         self.main_window.append_to_log(f"set(): {PLCdata}")
-
-        self.main_window.append_to_log(f"Running command: Type={Type_value}, Num={Num_value}, Query={Query_value}")
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

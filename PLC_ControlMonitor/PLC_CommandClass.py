@@ -90,6 +90,6 @@ class kvHostLink:
         rcv = self.sendrecive(('WR ' + addresssuffix + ' ' + data + '\r').encode())
         return rcv
 
-    def writs(self, addresssuffix, num, data):
+    def writes(self, addresssuffix, num, data):
         rcv = self.sendrecive(('WRS ' + addresssuffix + ' ' + str(num) + ' ' + data + '\r').encode())
         return rcv
