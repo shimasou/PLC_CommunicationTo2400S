@@ -269,7 +269,7 @@ class CommandLogTable(QWidget):
         )
         String_value = Device_string.text() if Device_string else "Not Written"
 
-        if Device_format.currentText() == 'ascii':
+        if Device_format.currentText() == 'ascii' and String_value != "Not Written":
             String_value = String_value if len(String_value) % 2 == 0 else String_value + '\x00'
             Elements_value = str(len(String_value) // 2)
             String_value = ''.join([format(ord(char), '02X') for char in String_value])
@@ -309,7 +309,7 @@ class CommandLogTable(QWidget):
             PLCdata = "Not Selected Query"
         
         print(PLCdata)
-        self.main_window.append_to_log(f"set(): {PLCdata}")
+        self.main_window.append_to_log(f"Com: {PLCdata}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
